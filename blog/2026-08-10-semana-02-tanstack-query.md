@@ -149,7 +149,8 @@ Venham com a lista **já migrada** — vamos atacar **carrinho e mutations** em 
 
 ## Lembretes de API
 
-- Base: `http://localhost:3333/v1`. Documentação viva (Swagger) em `/docs`.
+- **Base (nuvem):** `https://api.mockmerce.com.br/v1` — os apps conectam no backend na
+  nuvem, não em `localhost`. Swagger em `https://api.mockmerce.com.br/docs`.
 - Headers sempre: `X-API-Key` (grupo) e `X-Student-RM` (rastreio). Rotas de comprador exigem
   também `Authorization: Bearer`.
 - **Unidade vendável = variante.** Carrinho/checkout usam `variantId`; preço/estoque vivem em

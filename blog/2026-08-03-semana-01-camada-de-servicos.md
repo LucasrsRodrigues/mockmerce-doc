@@ -153,6 +153,6 @@ useEffect(() => {
 
 ## Lembretes de API
 
-- Base: `http://localhost:3333/v1`. Documentação viva (Swagger) em `/docs`.
-- URL por plataforma: emulador Android = `http://10.0.2.2:3333`; celular físico =
-  `http://SEU_IP:3333`; simulador iOS/web = `http://localhost:3333`.
+- **Base (nuvem):** `https://api.mockmerce.com.br/v1`. Os apps conectam no backend **na
+  nuvem**, não em `localhost` — no app, isso vem de `env.apiUrl`.
+- Documentação viva (Swagger): `https://api.mockmerce.com.br/docs`.
