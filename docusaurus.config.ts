@@ -104,7 +104,25 @@ const config: Config = {
           remarkPlugins: [remarkMath, remarkPlantuml],
           rehypePlugins: [rehypeKatex],
         },
-        blog: false,
+        // Diário de Aula: blog-devlog da turma. Cada aula vira um post datado,
+        // com o passo a passo do que foi feito + os exercícios.
+        blog: {
+          routeBasePath: '/diario',
+          path: 'blog',
+          blogTitle: 'Diário de Aula · 2TDSPG',
+          blogDescription: 'O que fizemos em cada aula, passo a passo, com os exercícios.',
+          blogSidebarTitle: 'Aulas',
+          blogSidebarCount: 'ALL',
+          // Diário de curso: ordem cronológica (Semana 1 → 2 → ...), não "mais recente primeiro".
+          sortPosts: 'ascending',
+          showReadingTime: true,
+          postsPerPage: 10,
+          feedOptions: {
+            type: ['rss', 'atom'],
+            title: 'Diário de Aula · 2TDSPG',
+            description: 'O passo a passo de cada aula da turma.',
+          },
+        },
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -131,6 +149,7 @@ const config: Config = {
       items: [
         { type: 'docSidebar', sidebarId: 'tutorialSidebar', position: 'left', label: 'Documentação' },
         { type: 'docSidebar', sidebarId: 'openApiSidebar', position: 'left', label: 'API' },
+        { to: '/diario', label: 'Diário de Aula', position: 'left' },
         { type: 'docsVersionDropdown', position: 'right' },
         { href: 'http://localhost:3333/docs', label: 'Swagger (API viva)', position: 'right' },
       ],

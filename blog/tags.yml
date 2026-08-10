@@ -1,19 +1,30 @@
-facebook:
-  label: Facebook
-  permalink: /facebook
-  description: Facebook tag description
+# Tags do Diário de Aula. Referencie pela chave no frontmatter (tags: [react-native, tanstack-query]).
+react-native:
+  label: React Native
+  permalink: /react-native
+  description: Aulas de React Native do 2º semestre.
 
-hello:
-  label: Hello
-  permalink: /hello
-  description: Hello tag description
+tanstack-query:
+  label: TanStack Query
+  permalink: /tanstack-query
+  description: Cache, revalidação e mutations otimistas com TanStack Query.
 
-docusaurus:
-  label: Docusaurus
-  permalink: /docusaurus
-  description: Docusaurus tag description
+axios:
+  label: Axios
+  permalink: /axios
+  description: Camada de serviços HTTP com Axios (instância, interceptors, tipagem).
 
-hola:
-  label: Hola
-  permalink: /hola
-  description: Hola tag description
+semana-01:
+  label: Semana 1
+  permalink: /semana-01
+  description: Consumo e integração com API · pt. 1.
+
+semana-02:
+  label: Semana 2
+  permalink: /semana-02
+  description: Consumo e integração com API · pt. 2.
+
+exercicios:
+  label: Exercícios
+  permalink: /exercicios
+  description: Dever de casa e desafios de aula.
