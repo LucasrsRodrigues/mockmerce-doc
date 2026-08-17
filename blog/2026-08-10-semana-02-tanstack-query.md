@@ -138,14 +138,179 @@ da turma. Use o `X-Student-RM` de **quem está codando** — isso conta na avali
 **Critério de pronto:** lista carrega via `useQuery`; **sem** `useEffect`/`useState` para
 data/loading/erro na tela; a busca reflete na query key.
 
-## Quarta é cronometrado 🕒
+## Quarta — carrinho e mutations (o código completo)
 
-Venham com a lista **já migrada** — vamos atacar **carrinho e mutations** em três blocos:
+Venham com a lista **já migrada**. A quarta é o código do carrinho, em três blocos.
 
-1. `useProduct(id)` + tela de detalhe (lembre: preço e estoque vivem em `variants[]`).
-2. `useCart()` **dependente de login** (`enabled`) + login do comprador.
-3. `useCartMutations` com **atualização otimista** (adicionar, +/− quantidade, remover) — o
-   entregável do dia é o **rollback** funcionando com o backend fora.
+### Bloco 1 — `useProduct(id)` + adicionar ao carrinho
+
+O detalhe é uma query de **um** item. Lembre: preço e estoque vivem em `variants[]`.
+
+```ts title="src/hooks/useProduct.ts"
+import { useQuery } from '@tanstack/react-query';
+import { getProduct } from '@/services/products';
+import { queryKeys } from '@/lib/queryKeys';
+
+export function useProduct(id: string) {
+  return useQuery({
+    queryKey: queryKeys.products.detail(id),
+    queryFn: () => getProduct(id),
+    enabled: Boolean(id), // não dispara com id vazio
+  });
+}
+```
+
+Na tela de detalhe, escolhemos a variante e disparamos a mutation de adicionar:
+
+```tsx title="src/screens/ProductDetailScreen.tsx (essencial)"
+const { data: product } = useProduct(id);
+const { addItem } = useCartMutations();
+const [variantId, setVariantId] = useState<string | null>(null);
+
+// variante escolhida (ou a default/primeira quando o produto chega)
+const selected = useMemo(() => {
+  if (!product) return undefined;
+  return product.variants.find((v) => v.id === variantId)
+    ?? product.variants.find((v) => v.isDefault)
+    ?? product.variants[0];
+}, [product, variantId]);
+
+function handleAdd() {
+  if (!product || !selected) return;
+  addItem.mutate(
+    {
+      variantId: selected.id,
+      quantity: 1,
+      name: selected.label ? `${product.name} (${selected.label})` : product.name,
+      unitPrice: selected.price, // dado local que o otimismo precisa
+    },
+    { onSuccess: () => navigation.navigate('Cart') },
+  );
+}
+```
+
+### Bloco 2 — `useCart()` dependente de login
+
+A rota `/cart` exige o token do comprador — então a query só dispara **logado**
+(`enabled: isLoggedIn`).
+
+```ts title="src/hooks/useCart.ts"
+import { useQuery } from '@tanstack/react-query';
+import { getCart } from '@/services/cart';
+import { queryKeys } from '@/lib/queryKeys';
+import { useSession } from '@/session/session';
+
+export function useCart() {
+  const { isLoggedIn } = useSession();
+  return useQuery({
+    queryKey: queryKeys.cart.all,
+    queryFn: getCart,
+    enabled: isLoggedIn, // sem login não roda (evita 401)
+  });
+}
+```
+
+### Bloco 3 — `useCartMutations` com atualização otimista
+
+O coração da semana. As três mutations (adicionar, mudar quantidade, remover) seguem o
+mesmo ciclo `onMutate` → `onError` → `onSettled`. Repare no `cancelQueries`, na **foto**
+(`previous`) e no `setQueryData` com um objeto **novo** (imutabilidade).
+
+```ts title="src/hooks/useCartMutations.ts"
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { addCartItem, removeCartItem, updateCartItem } from '@/services/cart';
+import { queryKeys } from '@/lib/queryKeys';
+import type { Cart } from '@/types/api';
+
+const EMPTY_CART: Cart = { id: 'optimistic', items: [], total: 0, itemCount: 0 };
+
+/** Recalcula total e itemCount a partir dos itens (mantém o Cart coerente). */
+function recompute(items: Cart['items']): Cart {
+  const total = items.reduce((sum, it) => sum + it.subtotal, 0);
+  const itemCount = items.reduce((sum, it) => sum + it.quantity, 0);
+  return { id: EMPTY_CART.id, items, total, itemCount };
+}
+
+export function useCartMutations() {
+  const queryClient = useQueryClient();
+  const key = queryKeys.cart.all;
+
+  // rollback + reconciliação, reaproveitados pelas 3 mutations
+  const rollbackOnError = (_e: unknown, _v: unknown, ctx?: { previous?: Cart }) => {
+    if (ctx?.previous) queryClient.setQueryData(key, ctx.previous);
+  };
+  const settle = () => queryClient.invalidateQueries({ queryKey: key });
+
+  // Adicionar — precisa de name/unitPrice para DESENHAR o item otimista
+  const addItem = useMutation({
+    mutationFn: (v: { variantId: string; quantity: number; name: string; unitPrice: number }) =>
+      addCartItem(v.variantId, v.quantity),
+    async onMutate(v) {
+      await queryClient.cancelQueries({ queryKey: key });     // 1. trava buscas em voo
+      const previous = queryClient.getQueryData<Cart>(key);   // 2. foto do cache
+      const base = previous ?? EMPTY_CART;
+      const existing = base.items.find((it) => it.variantId === v.variantId);
+      const items = existing
+        ? base.items.map((it) =>
+            it.variantId === v.variantId
+              ? { ...it, quantity: it.quantity + v.quantity, subtotal: it.unitPrice * (it.quantity + v.quantity) }
+              : it)
+        : [...base.items, {
+            variantId: v.variantId, name: v.name, sku: '',
+            unitPrice: v.unitPrice, quantity: v.quantity, subtotal: v.unitPrice * v.quantity,
+          }];
+      queryClient.setQueryData<Cart>(key, recompute(items));  // 3. otimismo
+      return { previous };                                    // 4. contexto p/ rollback
+    },
+    onError: rollbackOnError,
+    onSettled: settle,
+  });
+
+  // Mudar quantidade (0 remove)
+  const setQuantity = useMutation({
+    mutationFn: (v: { variantId: string; quantity: number }) => updateCartItem(v.variantId, v.quantity),
+    async onMutate(v) {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<Cart>(key);
+      const base = previous ?? EMPTY_CART;
+      const items = base.items
+        .map((it) => it.variantId === v.variantId ? { ...it, quantity: v.quantity, subtotal: it.unitPrice * v.quantity } : it)
+        .filter((it) => it.quantity > 0);
+      queryClient.setQueryData<Cart>(key, recompute(items));
+      return { previous };
+    },
+    onError: rollbackOnError,
+    onSettled: settle,
+  });
+
+  // Remover item
+  const removeItem = useMutation({
+    mutationFn: (variantId: string) => removeCartItem(variantId),
+    async onMutate(variantId) {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<Cart>(key);
+      const base = previous ?? EMPTY_CART;
+      const items = base.items.filter((it) => it.variantId !== variantId);
+      queryClient.setQueryData<Cart>(key, recompute(items));
+      return { previous };
+    },
+    onError: rollbackOnError,
+    onSettled: settle,
+  });
+
+  return { addItem, setQuantity, removeItem };
+}
+```
+
+**O entregável do dia é o rollback:** com o backend fora, adicionar um item mostra ele na
+hora e depois o **remove** sozinho (o `onError` restaura a foto). Isso é honestidade de UI.
+
+:::danger Os 4 erros que mais aparecem aqui
+- Esquecer `await cancelQueries` no `onMutate` → uma busca em voo chega depois e apaga o otimismo.
+- Não retornar `{ previous }` → o `onError` não tem o que restaurar.
+- Mutar o array do cache (`items.push`) em vez de criar um novo → React não re-renderiza.
+- Otimismo sem `name`/`unitPrice` → o item aparece "quebrado".
+:::
 
 ## Lembretes de API
 
