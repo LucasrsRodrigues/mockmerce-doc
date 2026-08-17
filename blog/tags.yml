@@ -24,6 +24,16 @@ semana-02:
   permalink: /semana-02
   description: Consumo e integração com API · pt. 2.
 
+semana-03:
+  label: Semana 3
+  permalink: /semana-03
+  description: Checkout e pedidos — fechar a compra de ponta a ponta.
+
+pedidos:
+  label: Pedidos
+  permalink: /pedidos
+  description: Checkout, pagamento simulado e ciclo de vida do pedido.
+
 exercicios:
   label: Exercícios
   permalink: /exercicios
