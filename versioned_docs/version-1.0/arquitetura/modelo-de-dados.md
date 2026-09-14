@@ -19,6 +19,8 @@ erDiagram
   Group ||--|| GroupConfig : "config da loja"
   Group ||--o{ MediaAsset : "arquivos (S3)"
   Group ||--o{ Review : "avaliações"
+  Group ||--o{ PickupPoint : "pontos de retirada"
+  PickupPoint ||--o{ Order : "retirada em"
 
   Product ||--o{ ProductVariant : "vende por"
   Product ||--o{ ProductImage : "exibe"
@@ -48,6 +50,12 @@ erDiagram
     string sku
     float price
     int stock
+  }
+  PickupPoint {
+    string name
+    float latitude
+    float longitude
+    boolean active
   }
   Review {
     int rating "1 a 5"
@@ -85,6 +93,10 @@ erDiagram
 - **`Review`** é a avaliação do cliente: nota, comentário e fotos. O `orderId`
   é a **prova da compra** — é ele que acende o selo "compra verificada". Ocultar
   (`hidden`) tira da vitrine e da média, sem apagar o registro.
+- **`PickupPoint`** é um ponto de retirada da loja; a coordenada é obrigatória
+  (sem ela não aparece no mapa). Um pedido com `pickupPointId` é retirada, não
+  entrega. `Address` e `GroupConfig` também ganharam latitude/longitude, ambas
+  **opcionais**.
 - **`MediaAsset`** é o **arquivo** na biblioteca da loja (o binário vive no S3, aqui fica o
   ponteiro); **`ProductImage`** é o **vínculo** desse arquivo com um produto ou variante.
   Por isso a mesma foto pode aparecer em vários produtos, e tirar a foto de um produto não

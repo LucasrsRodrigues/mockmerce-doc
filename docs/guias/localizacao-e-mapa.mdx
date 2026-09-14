@@ -1,0 +1,213 @@
+---
+id: localizacao-e-mapa
+title: Localização e mapa
+sidebar_label: Localização e mapa
+description: GPS no endereço de entrega, pontos de retirada por distância e o rastreio do pedido no mapa.
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Localização e mapa
+
+Três lugares onde o mapa entra na loja de vocês, do mais simples ao mais
+completo:
+
+| O quê | Rota principal | O que aparece na tela |
+|---|---|---|
+| **Endereço de entrega** | `POST /customers/me/addresses` | Um pin que o cliente arrasta para marcar a porta |
+| **Retirada na loja** | `GET /pickup-points` | Vários pins, ordenados por distância de quem olha |
+| **Rastreio do pedido** | `GET /sandbox/shipments/:id` | Um pin andando da loja até o destino |
+
+Todas as coordenadas saem da API no formato `{ latitude, longitude }` — o mesmo
+que o `react-native-maps` consome, sem conversão.
+
+## Antes de tudo: as bibliotecas
+
+```bash
+npx expo install expo-location react-native-maps
+```
+
+:::warning Android precisa de chave do Google Maps para gerar APK
+No **Expo Go** o mapa funciona sem configurar nada. Mas se algum grupo for gerar
+um **APK/AAB standalone**, o Android exige uma API key do Google Maps no
+`app.json`. No iOS não precisa (usa Apple Maps). Se a aula termina no Expo Go,
+não é problema.
+:::
+
+Pedir a posição do usuário é sempre em dois passos — permissão e leitura:
+
+```ts
+import * as Location from 'expo-location';
+
+const { status } = await Location.requestForegroundPermissionsAsync();
+if (status !== 'granted') {
+  // A tela PRECISA funcionar sem GPS: mostre a lista sem ordenar por distância.
+  return;
+}
+const pos = await Location.getCurrentPositionAsync({});
+const eu = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+```
+
+:::tip Nunca dependa do "sim"
+O usuário pode negar a permissão, e no emulador o GPS às vezes nem responde.
+Toda tela de mapa precisa de um plano B — no nosso caso, a lista sem distância.
+:::
+
+## 1. Endereço de entrega com GPS
+
+O endereço continua tendo CEP e rua; a coordenada é um **extra opcional**. O CEP
+localiza a rua, a coordenada localiza a porta.
+
+```ts
+// o cliente confirmou o pin no mapa
+await api.profile.addresses.add({
+  cep: '01310100', street: 'Av. Paulista', number: '900',
+  city: 'São Paulo', state: 'SP',
+  latitude: eu.latitude, longitude: eu.longitude,
+});
+
+// arrastou o pin depois? manda só a coordenada
+await api.profile.addresses.update(enderecoId, {
+  latitude: -23.5620, longitude: -46.6560,
+});
+```
+
+Na leitura, o endereço traz `coordinate` pronto (ou `null`, se nunca foi marcado):
+
+```tsx
+<MapView initialRegion={{ ...endereco.coordinate, latitudeDelta: 0.01, longitudeDelta: 0.01 }}>
+  <Marker
+    draggable
+    coordinate={endereco.coordinate}
+    onDragEnd={(e) => salvar(e.nativeEvent.coordinate)}
+  />
+</MapView>
+```
+
+Para transformar o endereço digitado em coordenada, use o próprio
+`expo-location` — sem chave de API e sem limite:
+
+```ts
+const [r] = await Location.geocodeAsync('Av. Paulista, 900, São Paulo');
+// r.latitude, r.longitude
+```
+
+## 2. Pontos de retirada
+
+A loja cadastra onde o cliente pode buscar o pedido. O app pede a lista **já
+ordenada pela distância** de quem está olhando:
+
+```ts
+const { data: pontos } = await api.locations.pickupPoints({
+  latitude: eu.latitude,
+  longitude: eu.longitude,
+  maxKm: 15,             // opcional: descarta o que está longe demais
+});
+
+pontos[0].name;          // "Loja Paulista"
+pontos[0].distanceKm;    // 2.97
+pontos[0].coordinate;    // { latitude, longitude }
+pontos[0].hours;         // "Seg a Sex, 9h às 18h"
+```
+
+Sem enviar posição, a lista vem por nome e `distanceKm` é `null` — é esse o
+caminho quando o usuário nega a permissão.
+
+```tsx
+<MapView style={{ flex: 1 }}>
+  {pontos.map((p) => (
+    <Marker key={p.id} coordinate={p.coordinate} title={p.name}
+            description={p.distanceKm ? `${p.distanceKm} km` : p.address.street ?? ''} />
+  ))}
+</MapView>
+```
+
+Escolhido o ponto, o checkout muda de entrega para retirada:
+
+```ts
+const pedido = await api.orders.checkout({ pickupPointId: pontos[0].id });
+pedido.pickup;   // { id, name, hours, coordinate, address }
+```
+
+Sem `pickupPointId`, `pedido.pickup` vem `null` e é entrega normal. Ponto de
+outra loja ou desativado é recusado com `400`.
+
+:::info A distância é em linha reta
+O cálculo usa a fórmula de **Haversine**, que mede sobre a curva da Terra.
+É a distância do voo de pássaro, não de rua — serve para ordenar e dar noção de
+perto/longe, não para prometer tempo de trajeto.
+:::
+
+### Cadastrando os pontos (lado da loja)
+
+```ts
+await api.locations.createPickupPoint({
+  name: 'Loja Paulista',
+  latitude: -23.5614, longitude: -46.6559,   // obrigatórias
+  cep: '01310100', street: 'Av. Paulista', number: '900',
+  city: 'São Paulo', state: 'SP',
+  hours: 'Seg a Sex, 9h às 18h',
+});
+```
+
+Sem coordenada o ponto é recusado — ele não teria como aparecer no mapa.
+Desativar (`active: false`) tira da vitrine mas mantém no painel e nos pedidos
+antigos.
+
+## 3. Rastreio do pedido no mapa
+
+Quando a loja despacha o pedido, o envio guarda as **pontas do trajeto**: a
+origem é a loja (configurada em *Loja → Dados da loja*) e o destino é o endereço
+do cliente. A cada avanço de status, o pedido "anda" um pedaço:
+
+```ts
+const envio = await api.sandbox.shipping.getShipment(envioId);
+
+envio.tracking.origin;        // onde a loja fica
+envio.tracking.destination;   // onde o cliente está
+envio.tracking.current;       // onde o pin está AGORA
+envio.tracking.path;          // os pontos por onde passou
+```
+
+```tsx
+<MapView>
+  <Marker coordinate={t.origin} title="Loja" />
+  <Marker coordinate={t.destination} title="Entrega" />
+  {t.current && <Marker coordinate={t.current} pinColor="blue" title="Seu pedido" />}
+  <Polyline coordinates={t.path} strokeWidth={3} />
+</MapView>
+```
+
+O pin avança conforme o status: `POSTED` 10% do caminho, `IN_TRANSIT` 55%,
+`OUT_FOR_DELIVERY` 90% e `DELIVERED` no destino.
+
+:::warning Este trajeto é simulado
+A posição é **interpolada em linha reta** entre a loja e o destino — não é
+GPS de transportadora, e não segue ruas. Serve para exercitar mapa, marcador e
+`Polyline` com dados que se movem de verdade a cada chamada da API.
+:::
+
+Para o pin se mexer na tela, avance o envio (é o que uma transportadora faria):
+
+```ts
+await api.sandbox.shipping.advanceShipment(envioId);   // dispara webhook shipment.updated
+```
+
+## Configurando onde a loja fica
+
+Sem isso, a origem do trajeto cai no centro de São Paulo:
+
+```ts
+await api.settings.update({ latitude: -23.5614, longitude: -46.6559 });
+```
+
+No painel do aluno isso fica em **Loja → Dados da loja**.
+
+## Erros
+
+| Status | Quando |
+|---|---|
+| `400` | Latitude fora de -90..90, longitude fora de -180..180, ou ponto sem coordenada |
+| `400` | `pickupPointId` de outra loja ou desativado no checkout |
+| `404` | Editar/apagar ponto que não é da sua loja |

@@ -236,6 +236,46 @@ const sidebar: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Localização",
+      link: {
+        type: "doc",
+        id: "api/localizacao",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "api/pontos-de-retirada-ativos-ordenados-por-distancia",
+          label: "Pontos de retirada ativos, ordenados por distância",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api/lista-os-pontos-da-loja-inclusive-inativos",
+          label: "Lista os pontos da loja (inclusive inativos)",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api/cadastra-um-ponto-de-retirada",
+          label: "Cadastra um ponto de retirada",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api/edita-um-ponto-de-retirada",
+          label: "Edita um ponto de retirada",
+          className: "api-method patch",
+        },
+        {
+          type: "doc",
+          id: "api/remove-um-ponto-de-retirada",
+          label: "Remove um ponto de retirada",
+          className: "api-method delete",
+        },
+      ],
+    },
+    {
+      type: "category",
       label: "Auth Cliente",
       link: {
         type: "doc",
@@ -293,6 +333,12 @@ const sidebar: SidebarsConfig = {
           id: "api/adiciona-um-endereco",
           label: "Adiciona um endereço",
           className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api/atualiza-um-endereco-inclusive-o-ponto-no-mapa",
+          label: "Atualiza um endereço (inclusive o ponto no mapa)",
+          className: "api-method patch",
         },
         {
           type: "doc",

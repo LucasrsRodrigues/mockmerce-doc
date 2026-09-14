@@ -1,1 +1,1 @@
-{"title":"Body"}
+{"title":"Body","body":{"required":true,"content":{"application/json":{"schema":{"type":"object","properties":{"pickupPointId":{"type":"string","description":"Retirar neste ponto em vez de receber em casa (ver GET /pickup-points)."}}}}}}}

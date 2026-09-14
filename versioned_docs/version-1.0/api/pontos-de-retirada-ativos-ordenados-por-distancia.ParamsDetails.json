@@ -1,0 +1,1 @@
+{"parameters":[{"schema":{"type":"number","minimum":-90,"maximum":90},"in":"query","name":"latitude","required":false},{"schema":{"type":"number","minimum":-180,"maximum":180},"in":"query","name":"longitude","required":false},{"schema":{"type":"number","minimum":0},"in":"query","name":"maxKm","required":false,"description":"Descarta pontos além deste raio."}]}

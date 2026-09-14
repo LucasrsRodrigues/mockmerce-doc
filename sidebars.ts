@@ -44,6 +44,7 @@ const sidebars: SidebarsConfig = {
         'guias/produtos-e-variantes',
         'guias/upload-de-midia',
         'guias/avaliacoes',
+        'guias/localizacao-e-mapa',
         'guias/webhooks',
         'guias/deploy',
       ],

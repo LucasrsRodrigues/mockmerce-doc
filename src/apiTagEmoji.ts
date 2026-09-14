@@ -8,6 +8,7 @@ export const API_TAG_EMOJI: Record<string, string> = {
   Catálogo: '🛍️',
   Mídia: '🖼️',
   Avaliações: '⭐',
+  Localização: '📍',
   'Auth Cliente': '🔐',
   Cliente: '👤',
   Carrinho: '🛒',
