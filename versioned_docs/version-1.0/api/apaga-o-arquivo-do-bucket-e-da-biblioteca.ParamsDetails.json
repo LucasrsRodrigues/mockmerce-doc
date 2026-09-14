@@ -1,0 +1,1 @@
+{"parameters":[{"schema":{"type":"boolean","default":false},"in":"query","name":"force","required":false,"description":"Apaga mesmo se estiver em uso por um produto."},{"schema":{"type":"string"},"in":"path","name":"id","required":true}]}

@@ -1,0 +1,1 @@
+{"responses":{"200":{"description":"Default Response","content":{"application/json":{"schema":{"type":"array","items":{"type":"object","properties":{"rm":{"type":"string"},"name":{"type":"string"},"jaAcessou":{"type":"boolean"},"mustChangePassword":{"type":"boolean"},"groupId":{"type":["null","string"]},"group":{"type":["null","string"]},"createdAt":{"type":"string"}}}}}}}}}

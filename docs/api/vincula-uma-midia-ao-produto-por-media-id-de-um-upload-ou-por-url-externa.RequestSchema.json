@@ -1,0 +1,1 @@
+{"title":"Body","body":{"required":true,"content":{"application/json":{"schema":{"type":"object","properties":{"mediaId":{"type":"string"},"url":{"type":"string"},"variantId":{"type":"string"},"position":{"type":"integer"},"isPrimary":{"type":"boolean"}}}}}}}

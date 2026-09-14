@@ -99,6 +99,53 @@ Preço vai no `PATCH /variants/:id`; **estoque** usa os endpoints de estoque
 
 Retorna `204 No Content`.
 
+## Fotos e vídeos
+
+<Endpoint method="POST" path="/v1/uploads" auth="X-API-Key" />
+<Endpoint method="POST" path="/v1/products/:id/media" auth="X-API-Key" />
+
+Os dois recebem `multipart/form-data` com o arquivo no campo **`file`**. O primeiro só
+sobe para a biblioteca da loja; o segundo sobe **e já vincula** ao produto.
+
+```bash title="sobe e vincula (uma chamada)"
+curl -X POST "$BASE/products/$ID/media" \
+  -H "X-API-Key: sk_live_..." \
+  -F "file=@foto.jpg" -F "isPrimary=true"
+```
+
+```json title="resposta do POST /v1/uploads"
+{
+  "id": "cmu0...",
+  "kind": "IMAGE",
+  "url": "https://mockmerce-media.s3.us-east-1.amazonaws.com/groups/.../a1b2c3.jpg",
+  "mimeType": "image/png",
+  "sizeBytes": 48213
+}
+```
+
+<Endpoint method="POST" path="/v1/products/:id/images" auth="X-API-Key" />
+<Endpoint method="PATCH" path="/v1/images/:id" auth="X-API-Key" />
+<Endpoint method="DELETE" path="/v1/images/:id" auth="X-API-Key" />
+
+Vincula uma mídia já enviada (`mediaId`) ou uma URL externa (`url`); o `PATCH` troca a
+capa ou a ordem; o `DELETE` desvincula (o arquivo continua na biblioteca).
+
+```json title="POST /v1/products/:id/images"
+{ "mediaId": "cmu0...", "isPrimary": true }
+```
+
+<Endpoint method="GET" path="/v1/media" auth="X-API-Key" />
+<Endpoint method="GET" path="/v1/media/usage" auth="X-API-Key" />
+<Endpoint method="DELETE" path="/v1/media/:id" auth="X-API-Key" />
+
+Biblioteca da loja, espaço usado e remoção definitiva (`?force=true` quando o arquivo
+estiver em uso por algum produto).
+
+:::tip Detalhes e armadilhas
+Formatos, limites, capa e o erro clássico do `Content-Type` estão no guia
+[Fotos e vídeos](../guias/upload-de-midia).
+:::
+
 ## Categorias, marcas e coleções
 
 <Endpoint method="GET" path="/v1/categories" auth="X-API-Key" />

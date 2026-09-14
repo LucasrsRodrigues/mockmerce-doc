@@ -1,0 +1,1 @@
+{"responses":{"201":{"description":"Default Response","content":{"application/json":{"schema":{"type":"object","properties":{"created":{"type":"integer"},"skipped":{"type":"array","items":{"type":"string"},"description":"RMs já existentes (não recriados)"}}}}}}}}

@@ -1,0 +1,1 @@
+{"responses":{"200":{"description":"Default Response","content":{"application/json":{"schema":{"type":"object","properties":{"token":{"type":"string"},"customer":{"type":"object","properties":{"id":{"type":"string"},"name":{"type":"string"},"email":{"type":"string"}}}}}}}}}}

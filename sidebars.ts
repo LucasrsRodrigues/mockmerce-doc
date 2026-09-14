@@ -42,6 +42,7 @@ const sidebars: SidebarsConfig = {
         'guias/autenticacao',
         'guias/fluxo-de-compra',
         'guias/produtos-e-variantes',
+        'guias/upload-de-midia',
         'guias/webhooks',
         'guias/deploy',
       ],

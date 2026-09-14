@@ -59,12 +59,20 @@ O spec vem do backend (`mockmerce-back`, em `/docs/json`). Para atualizar depois
 # 1. baixe o spec novo (backend precisa estar no ar)
 curl http://localhost:3333/docs/json -o openapi/ecommerce.json
 
-# 2. regenere as páginas
-npm run docusaurus clean-api-docs ecommerce
-npm run docusaurus gen-api-docs ecommerce
+# 2. regenere as páginas E propague para a versão publicada
+npm run api:sync
 ```
 
 As páginas geradas ficam em `docs/api/` (não editar à mão).
+
+:warning: **Por que o `api:sync` e não só o `gen-api-docs`:** o plugin escreve apenas em
+`docs/api`, que é a versão **Next**. Como o site serve a **1.0**, sem o passo de
+propagação a regeneração não aparece para ninguém. O `scripts/sync-versioned-api.cjs`
+copia as páginas para `versioned_docs/version-1.0/api` e reescreve o `openApiSidebar` em
+`versioned_sidebars/version-1.0-sidebars.json`.
+
+**Tag nova no backend?** Adicione o emoji dela em `src/apiTagEmoji.ts` — o script avisa se
+alguma categoria ficou sem. O mesmo mapa alimenta o menu lateral e os cards.
 
 ## Publicar uma nova versão da doc
 

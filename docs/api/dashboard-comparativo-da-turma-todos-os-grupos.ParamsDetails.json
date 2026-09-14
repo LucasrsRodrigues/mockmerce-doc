@@ -1,0 +1,1 @@
+{"parameters":[{"schema":{"type":"integer","minimum":1,"maximum":60,"default":14},"in":"query","name":"days","required":false}]}

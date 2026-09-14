@@ -17,9 +17,11 @@ erDiagram
   Group ||--o{ Customer : "possui"
   Group ||--o{ Order : "possui"
   Group ||--|| GroupConfig : "config da loja"
+  Group ||--o{ MediaAsset : "arquivos (S3)"
 
   Product ||--o{ ProductVariant : "vende por"
-  Product ||--o{ ProductImage : "tem"
+  Product ||--o{ ProductImage : "exibe"
+  MediaAsset ||--o{ ProductImage : "é usada em"
   ProductVariant ||--o{ OrderItem : "vira"
 
   Customer ||--o{ Order : "faz"
@@ -44,6 +46,19 @@ erDiagram
     float price
     int stock
   }
+  MediaAsset {
+    string id PK
+    string kind "IMAGE ou VIDEO"
+    string key "caminho no bucket"
+    string url "URL pública"
+    int sizeBytes
+  }
+  ProductImage {
+    string id PK
+    string mediaId FK "null se URL externa"
+    string kind "IMAGE ou VIDEO"
+    boolean isPrimary "a capa"
+  }
   Order {
     string id PK
     string status "PENDING/PAID/..."
@@ -58,6 +73,10 @@ erDiagram
   que vira `OrderItem`.
 - **`ApiKey`** guarda só o **hash**; `revokedAt = null` significa chave ativa. Convive com
   a `Group.apiKeyHash` (a chave primária criada pelo professor).
+- **`MediaAsset`** é o **arquivo** na biblioteca da loja (o binário vive no S3, aqui fica o
+  ponteiro); **`ProductImage`** é o **vínculo** desse arquivo com um produto ou variante.
+  Por isso a mesma foto pode aparecer em vários produtos, e tirar a foto de um produto não
+  apaga o arquivo.
 - **`GroupConfig`** guarda a configuração da loja (identidade, contato, tema, regional).
 
 :::note Isolamento na prática

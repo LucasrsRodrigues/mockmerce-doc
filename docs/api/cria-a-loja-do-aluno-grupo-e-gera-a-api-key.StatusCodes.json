@@ -1,0 +1,1 @@
+{"responses":{"201":{"description":"Default Response","content":{"application/json":{"schema":{"type":"object","properties":{"token":{"type":"string"},"groupId":{"type":"string"},"name":{"type":"string"},"apiKey":{"type":"string","description":"GUARDE AGORA. Não será mostrada de novo."}}}}}}}}

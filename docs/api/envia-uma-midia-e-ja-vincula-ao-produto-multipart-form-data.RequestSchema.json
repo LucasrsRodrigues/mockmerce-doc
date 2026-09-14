@@ -1,0 +1,1 @@
+{"title":"Body","body":{"required":true,"content":{"multipart/form-data":{"schema":{"type":"object","properties":{"file":{"type":"string","format":"binary"},"variantId":{"type":"string"},"isPrimary":{"type":"string","enum":["true","false"]},"position":{"type":"integer"},"folder":{"type":"string"}}}}}}}
