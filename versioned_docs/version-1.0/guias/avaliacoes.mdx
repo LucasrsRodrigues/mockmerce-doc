@@ -1,0 +1,187 @@
+---
+id: avaliacoes
+title: Avaliações de produto
+sidebar_label: Avaliações (estrelas)
+description: Nota, comentário e fotos de quem comprou — com média, moderação e o selo de compra verificada.
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Avaliações de produto
+
+O cliente que **comprou** deixa uma nota de 1 a 5 estrelas, um comentário e até
+5 fotos. A loja vê tudo no painel e pode ocultar o que for abusivo.
+
+```mermaid
+flowchart TD
+  A[Cliente compra] --> B[Pedido PAGO]
+  B --> C{"canReview?"}
+  C -->|não comprou| D["Tela mostra<br/>'compre para avaliar'"]
+  C -->|já avaliou| E["Mostra a avaliação<br/>que ele já deixou"]
+  C -->|pode avaliar| F["Formulário:<br/>estrelas + texto + fotos"]
+  F --> G["Aparece na vitrine<br/>e entra na média"]
+  G --> H{"Loja oculta?"}
+  H -->|sim| I["Some da vitrine<br/>e da média"]
+  H -->|não| J["Continua visível<br/>com selo de compra verificada"]
+```
+
+## As três regras
+
+1. **Só quem comprou avalia.** A API procura um pedido do cliente com aquele
+   produto e status `PAID`, `SHIPPED`, `DELIVERED` ou `FULFILLED`. Sem isso, `403`.
+2. **Uma avaliação por cliente em cada produto.** Tentar de novo dá `409` — o
+   caminho é editar a que existe.
+3. **Nasce visível.** Nada fica esperando aprovação; a loja oculta depois.
+
+## Antes de mostrar o formulário
+
+Essa é a primeira chamada da tela — ela evita o cliente escrever um textão para
+levar `403` no final:
+
+```ts
+const r = await api.reviews.canReview(produtoId);
+// { canReview, reason, message, reviewId }
+```
+
+| `reason` | O que a tela mostra |
+|---|---|
+| `null` (e `canReview: true`) | O formulário de avaliação |
+| `NOT_PURCHASED` | "Compre para avaliar" — sem formulário |
+| `ALREADY_REVIEWED` | A avaliação dele, com botão de editar (`reviewId`) |
+
+## Enviar a avaliação
+
+A foto usa o **mesmo upload de sempre**: sobe primeiro, manda o `mediaId` depois.
+
+<Tabs>
+<TabItem value="rn" label="React Native" default>
+
+```ts
+// 1) sobe as fotos (opcional)
+const foto = { uri: r.assets[0].uri, name: 'foto.jpg', type: 'image/jpeg' };
+const media = await api.media.upload(foto, { folder: 'avaliacoes' });
+
+// 2) manda a avaliação
+const review = await api.reviews.create(produtoId, {
+  rating: 5,
+  title: 'Recomendo',
+  comment: 'Chegou antes do prazo.',
+  mediaIds: [media.id],
+});
+```
+
+</TabItem>
+<TabItem value="fetch" label="fetch">
+
+```ts
+await fetch(`${BASE}/products/${produtoId}/reviews`, {
+  method: 'POST',
+  headers: {
+    'X-API-Key': API_KEY,
+    Authorization: `Bearer ${tokenDoCliente}`,   // precisa estar logado
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ rating: 5, comment: 'Muito bom!', mediaIds: [] }),
+});
+```
+
+</TabItem>
+</Tabs>
+
+:::warning O token do cliente é obrigatório
+Avaliar é ação de **cliente logado**: além da `X-API-Key`, mande o
+`Authorization: Bearer` do login do comprador. Sem ele, `401`.
+:::
+
+## Mostrar na tela do produto
+
+A listagem já vem com o resumo pronto para desenhar as estrelas e as barrinhas:
+
+```ts
+const { data, total, summary } = await api.reviews.list(produtoId);
+
+summary.average;        // 4.5
+summary.count;          // 12
+summary.distribution;   // { "5": 8, "4": 2, "3": 1, "2": 0, "1": 1 }
+```
+
+Cada avaliação traz o que a tela precisa:
+
+```ts
+data[0].author.name;        // "Maria S." — nunca o nome completo
+data[0].verifiedPurchase;   // true → mostre o selo "compra verificada"
+data[0].images;             // fotos enviadas pelo cliente
+data[0].isMine;             // true na avaliação do cliente logado
+```
+
+Filtros úteis: `rating` (só as de 5 estrelas), `withPhotos` (só com foto) e
+`sort` (`recent`, `rating_desc`, `rating_asc`).
+
+## A nota no card do produto
+
+Não precisa buscar avaliação para montar a listagem — o catálogo já devolve a
+média junto:
+
+```ts
+const { data } = await api.products.list();
+data[0].rating;   // { average: 4.5, count: 12 }
+
+const prod = await api.products.get(id);
+prod.rating;      // média + contagem + distribuição
+```
+
+## Editar e apagar
+
+```ts
+await api.reviews.update(reviewId, { rating: 4, comment: 'Editei minha opinião' });
+await api.reviews.remove(reviewId);
+const minhas = await api.reviews.mine();     // com o produto de cada uma
+```
+
+:::tip Trocar as fotos substitui a lista
+Mandar `mediaIds` no update **substitui** as fotos da avaliação. Para manter
+alguma, reenvie o `mediaId` dela junto com as novas.
+:::
+
+## A loja moderando
+
+```ts
+// tudo, inclusive o que já foi ocultado
+const { data } = await api.reviews.storeList({ hidden: false });
+
+// tira do ar (some da vitrine E da média)
+await api.reviews.setHidden(reviewId, true, 'linguagem inadequada');
+
+// volta a exibir
+await api.reviews.setHidden(reviewId, false);
+```
+
+O cliente dono da avaliação continua vendo a dele em `reviews.mine()`, com
+`hidden: true` — ele percebe que saiu do ar.
+
+## Erros
+
+| Status | Quando |
+|---|---|
+| `401` | Faltou o token do cliente |
+| `403` | Não comprou o produto, ou tentou mexer na avaliação de outra pessoa |
+| `409` | Já avaliou este produto |
+| `400` | Nota fora de 1–5, mais de 5 fotos, ou `mediaId` que não existe na loja |
+
+## Webhook
+
+Cada avaliação nova dispara o evento **`review.created`**:
+
+```json
+{
+  "reviewId": "cmu0...",
+  "productId": "cmu0...",
+  "productName": "Fone Gamer",
+  "rating": 5,
+  "hasImages": true
+}
+```
+
+Dá para usar isso para avisar a loja no app do lojista ou por e-mail. Veja
+[Webhooks](webhooks) para assinar o evento.

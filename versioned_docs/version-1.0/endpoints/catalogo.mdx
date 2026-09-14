@@ -146,6 +146,47 @@ Formatos, limites, capa e o erro clássico do `Content-Type` estão no guia
 [Fotos e vídeos](../guias/upload-de-midia).
 :::
 
+## Avaliações
+
+<Endpoint method="GET" path="/v1/products/:id/reviews" auth="X-API-Key" />
+<Endpoint method="GET" path="/v1/products/:id/reviews/can-review" auth="Bearer (cliente)" />
+<Endpoint method="POST" path="/v1/products/:id/reviews" auth="Bearer (cliente)" />
+
+Só quem **comprou** avalia (pedido pago com o produto), e cada cliente avalia um
+produto **uma vez**. A listagem é pública dentro da loja e já traz o resumo.
+
+```json title="POST /v1/products/:id/reviews"
+{ "rating": 5, "title": "Recomendo", "comment": "Chegou antes do prazo.", "mediaIds": ["cmu0..."] }
+```
+
+```json title="resumo que acompanha a listagem"
+{
+  "summary": {
+    "average": 4.5,
+    "count": 12,
+    "distribution": { "5": 8, "4": 2, "3": 1, "2": 0, "1": 1 }
+  }
+}
+```
+
+<Endpoint method="PATCH" path="/v1/reviews/:id" auth="Bearer (cliente)" />
+<Endpoint method="DELETE" path="/v1/reviews/:id" auth="Bearer (cliente)" />
+<Endpoint method="GET" path="/v1/me/reviews" auth="Bearer (cliente)" />
+
+Editar e apagar valem só para a **própria** avaliação (`403` na dos outros).
+
+<Endpoint method="GET" path="/v1/store/reviews" auth="X-API-Key" />
+<Endpoint method="PATCH" path="/v1/store/reviews/:id" auth="X-API-Key" />
+
+A loja vê tudo (inclusive o que ocultou) e modera com `{ "hidden": true }` —
+a avaliação sai da vitrine **e** da média.
+
+:::tip A nota já vem no produto
+`GET /products` e `GET /products/:id` devolvem `rating` — não precisa buscar as
+avaliações só para desenhar as estrelinhas do card. Detalhes no guia
+[Avaliações](../guias/avaliacoes).
+:::
+
 ## Categorias, marcas e coleções
 
 <Endpoint method="GET" path="/v1/categories" auth="X-API-Key" />

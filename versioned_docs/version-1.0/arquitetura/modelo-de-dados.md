@@ -18,6 +18,7 @@ erDiagram
   Group ||--o{ Order : "possui"
   Group ||--|| GroupConfig : "config da loja"
   Group ||--o{ MediaAsset : "arquivos (S3)"
+  Group ||--o{ Review : "avaliações"
 
   Product ||--o{ ProductVariant : "vende por"
   Product ||--o{ ProductImage : "exibe"
@@ -25,6 +26,8 @@ erDiagram
   ProductVariant ||--o{ OrderItem : "vira"
 
   Customer ||--o{ Order : "faz"
+  Customer ||--o{ Review : "avalia"
+  Product ||--o{ Review : "recebe"
   Customer ||--o{ Cart : "tem"
   Order ||--o{ OrderItem : "contém"
   Cart ||--o{ CartItem : "contém"
@@ -45,6 +48,12 @@ erDiagram
     string sku
     float price
     int stock
+  }
+  Review {
+    int rating "1 a 5"
+    string comment
+    boolean hidden "ocultada pela loja"
+    string orderId FK "prova da compra"
   }
   MediaAsset {
     string id PK
@@ -73,6 +82,9 @@ erDiagram
   que vira `OrderItem`.
 - **`ApiKey`** guarda só o **hash**; `revokedAt = null` significa chave ativa. Convive com
   a `Group.apiKeyHash` (a chave primária criada pelo professor).
+- **`Review`** é a avaliação do cliente: nota, comentário e fotos. O `orderId`
+  é a **prova da compra** — é ele que acende o selo "compra verificada". Ocultar
+  (`hidden`) tira da vitrine e da média, sem apagar o registro.
 - **`MediaAsset`** é o **arquivo** na biblioteca da loja (o binário vive no S3, aqui fica o
   ponteiro); **`ProductImage`** é o **vínculo** desse arquivo com um produto ou variante.
   Por isso a mesma foto pode aparecer em vários produtos, e tirar a foto de um produto não

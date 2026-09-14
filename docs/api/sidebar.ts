@@ -178,6 +178,64 @@ const sidebar: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Avaliações",
+      link: {
+        type: "doc",
+        id: "api/avaliacoes",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "api/lista-as-avaliacoes-de-um-produto-com-media-e-distribuicao",
+          label: "Lista as avaliações de um produto (com média e distribuição)",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api/avalia-um-produto-so-quem-comprou",
+          label: "Avalia um produto (só quem comprou)",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api/diz-se-o-cliente-logado-pode-avaliar-este-produto",
+          label: "Diz se o cliente logado pode avaliar este produto",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api/edita-a-propria-avaliacao",
+          label: "Edita a própria avaliação",
+          className: "api-method patch",
+        },
+        {
+          type: "doc",
+          id: "api/apaga-a-propria-avaliacao",
+          label: "Apaga a própria avaliação",
+          className: "api-method delete",
+        },
+        {
+          type: "doc",
+          id: "api/avaliacoes-que-o-cliente-logado-escreveu",
+          label: "Avaliações que o cliente logado escreveu",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api/lista-as-avaliacoes-da-loja-inclusive-as-ocultas",
+          label: "Lista as avaliações da loja (inclusive as ocultas)",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api/oculta-ou-volta-a-exibir-uma-avaliacao",
+          label: "Oculta ou volta a exibir uma avaliação",
+          className: "api-method patch",
+        },
+      ],
+    },
+    {
+      type: "category",
       label: "Auth Cliente",
       link: {
         type: "doc",
