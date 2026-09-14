@@ -141,6 +141,12 @@ perto/longe, não para prometer tempo de trajeto.
 
 ### Cadastrando os pontos (lado da loja)
 
+O jeito mais rápido é pelo **painel do aluno**, em **Retirada → Novo ponto**:
+clique no mapa para marcar a coordenada (ou arraste o pin) e preencha o
+endereço. De lá também dá para ativar, desativar e editar.
+
+Pela API, é o mesmo cadastro:
+
 ```ts
 await api.locations.createPickupPoint({
   name: 'Loja Paulista',
@@ -158,7 +164,7 @@ antigos.
 ## 3. Rastreio do pedido no mapa
 
 Quando a loja despacha o pedido, o envio guarda as **pontas do trajeto**: a
-origem é a loja (configurada em *Loja → Dados da loja*) e o destino é o endereço
+origem é a loja (marcada em *Loja → Localização da loja*) e o destino é o endereço
 do cliente. A cada avanço de status, o pedido "anda" um pedaço:
 
 ```ts
@@ -196,13 +202,14 @@ await api.sandbox.shipping.advanceShipment(envioId);   // dispara webhook shipme
 
 ## Configurando onde a loja fica
 
-Sem isso, a origem do trajeto cai no centro de São Paulo:
+No painel, em **Loja → Localização da loja**, clique no mapa para marcar o
+endereço da loja. Pela API:
 
 ```ts
 await api.settings.update({ latitude: -23.5614, longitude: -46.6559 });
 ```
 
-No painel do aluno isso fica em **Loja → Dados da loja**.
+Sem marcar, a origem do trajeto de entrega cai no centro de São Paulo.
 
 ## Erros
 
